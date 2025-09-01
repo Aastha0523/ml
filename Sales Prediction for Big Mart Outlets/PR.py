@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import PoissonRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
@@ -41,21 +41,14 @@ preprocessor = ColumnTransformer(
                       ("ohe", OneHotEncoder(handle_unknown='ignore',sparse_output=False))]), cat_col),
 ])
 
-lr = LinearRegression()
-lr = Pipeline(steps=[
+pr = PoissonRegressor()
+pr = Pipeline(steps=[
     ('preprocessor' ,preprocessor),
-    ('regressor' ,LinearRegression())
+    ('regressor' ,PoissonRegressor(alpha=1.0, max_iter=1000))
 ])
 
-log_lr = TransformedTargetRegressor(
-    regressor=lr,
-    func=np.log1p,        # transform y -> log(1+y)
-    inverse_func=np.expm1 # invert back to original scale
-)
-
-
-log_lr.fit(X_train, Y_train)
-Y_pred = log_lr.predict(X_test)
+pr.fit(X_train, Y_train)
+Y_pred = pr.predict(X_test)
 
 rmse = np.sqrt(mean_squared_error(Y_test, Y_pred))
 print(rmse)
